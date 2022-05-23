@@ -1,6 +1,5 @@
 from asyncio.windows_events import NULL
 from cmath import pi
-from email import header
 import detectron2    
 from detectron2.utils.logger import setup_logger
 setup_logger()
@@ -14,7 +13,6 @@ from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
 from pathlib import Path
 import os
-import glob
 from detectron2.data.datasets import register_coco_instances
 from detectron2.utils.visualizer import ColorMode
 import math
@@ -157,8 +155,10 @@ def measure_table(pred_boxes:np.ndarray,image:np.ndarray,masks:np.ndarray)->np.n
 
 #method for configuring neural network model
 def configure_network():
-    
-    cfg.merge_from_file(model_zoo.get_config_file("detectron2://COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl"))
+    #for rcnn R50
+    cfg.merge_from_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+    #for rcnn R101
+    #cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "PATH_TO_MODEL")
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5   
     cfg.DATASETS.TEST = ("pig_leg_surgery", )
@@ -188,22 +188,10 @@ def calibrate(image:np.ndarray,real_sideAC_mm:int=320,real_sideBD_mm:int=135,rea
     """
     
     #show_predictions(image)
-    start_time=time.perf_counter()
     corners,pred_boxes,masks=find_corners(image)
-    end_time=time.perf_counter()
-    fincorn_time=end_time-start_time
-    start_time=time.perf_counter()
     metrics,radiuses_NN=measure_table(pred_boxes,image,masks)
-    end_time=time.perf_counter()
-    meastable_time=end_time-start_time
-    start_time=time.perf_counter()
     radiuses_HT=hough_transform_find_holes(corners)
-    end_time=time.perf_counter()
-    hough_time=end_time-start_time
-    start_time=time.perf_counter()
     pix_size_QR=main_qr(image)
-    end_time=time.perf_counter()
-    qr_time=end_time-start_time
     radius_pix_to_mm=0
     sides_pix_to_mm=0
     non_null_metrics=0
@@ -232,7 +220,7 @@ def calibrate(image:np.ndarray,real_sideAC_mm:int=320,real_sideBD_mm:int=135,rea
         radius_pix_to_mm=0
     if pix_size_QR==None:
         pix_size_QR=0
-    output_list=[pix_size_QR,radius_pix_to_mm,sides_pix_to_mm,radiuses_HT,fincorn_time,meastable_time,hough_time,qr_time]
+    output_list=[pix_size_QR,radius_pix_to_mm,sides_pix_to_mm,radiuses_HT]
     return output_list
     
 #method for reading QR codes - 
@@ -282,9 +270,9 @@ def main_qr(img:np.ndarray)->float:
 if __name__ == '__main__':
     
     start_time=time.perf_counter()
-    register_coco_instances("pig_leg_surgery", {}, Path(f"PATH_TO_JSON_FILE"), Path(f"PATH_TO_IMAGES"))
+    register_coco_instances("pig_leg_surgery", {}, Path(f"/instances_default.json"), Path(f""))
     pig_leg_surgery_metadata = MetadataCatalog.get("pig_leg_surgery")
     dataset_dicts = DatasetCatalog.get("pig_leg_surgery")
     cfg = get_cfg()
     configure_network()
-    calibrate()
+    output=calibrate(cv2.imread(f"PATH_TO_FILE"))
