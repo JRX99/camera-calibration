@@ -43,4 +43,18 @@ def calibrate(image:np.ndarray,real_sideAC_mm:int=320,real_sideBD_mm:int=135,rea
     pix_size_QR=main_qr(image)
     
 ```
+## Zvolení modelu
 
+Předtrénované modely neuronové sítě jsou uloženy zde: https://drive.google.com/drive/u/0/folders/1RJDIW6De3LLQCrutjxjieI2tllJzfJ9D
+
+Pro kalibraci pomocí neuronové sítě a měření kruhových výřezů je potřeba použít modely (mode_name)_holes.pth
+
+V metodě configure_network() se zvolí model. Zde je ještě třeba zvolit i správné nastavení vah.
+```
+def configure_network():
+    #for rcnn R50
+    cfg.merge_from_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+    #for rcnn R101
+    #cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+    cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "PATH_TO_MODEL")
+```
